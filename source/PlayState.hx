@@ -416,6 +416,9 @@ class PlayState extends MusicBeatState
 	// Default Note X Positions (Non Middlescroll). Used For Modcharts If You Want.
 	var notePositions:Array<Float> = [92, 204, 316, 428, 732, 844, 956, 1068];
 
+	public var noteCounter:Int = 0;
+	// idk
+
 	// Adding Objects Using Lua
 	public function addObject(object:FlxBasic)
 	{
@@ -2172,7 +2175,7 @@ class PlayState extends MusicBeatState
 
 		add(grpNoteSplashes);
 
-		for (i in 0...15)
+		for (i in 0...20)
 			notes.add(new Note()).kill();
 		// something something preallocation	
 
@@ -2191,99 +2194,20 @@ class PlayState extends MusicBeatState
 
 			for (songNotes in section.sectionNotes)
 			{
-				var daStrumTime:Float = (songNotes[0] - FlxG.save.data.offset - SONG.offset) / songMultiplier;
-				if (daStrumTime < 0)
-					daStrumTime = 0;
-				var daNoteData:Int = Std.int(songNotes[1] % 4);
-				var daNoteType:String = songNotes[4];
-				var daBeat = TimingStruct.getBeatFromTime(daStrumTime);
-
 				var gottaHitNote:Bool = false;
-
 				if (songNotes[1] > 3)
 					gottaHitNote = true;
 				else if (songNotes[1] <= 3)
 					gottaHitNote = false;
 
-				if (PlayStateChangeables.opponentMode)
-					gottaHitNote = !gottaHitNote;
-
-				var oldNote:Note;
-				if (unspawnNotes.length > 0)
-					oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
-				else
-					oldNote = null;
-
-				//var swagNote = new Note(daStrumTime, daNoteData, oldNote, false, false, gottaHitNote, daBeat);
-				var swagNote = notes.recycle(Note);
-				swagNote.setup(daStrumTime, daNoteData, oldNote, false);
-				swagNote.beat - daBeat;
-				swagNote.isPlayer = gottaHitNote;
-				swagNote.noteShit = daNoteType;
-
-				if (PlayStateChangeables.holds)
-				{
-					swagNote.sustainLength = songNotes[2] / songMultiplier;
-				}
-				else
-				{
-					swagNote.sustainLength = 0;
-				}
-
-				swagNote.scrollFactor.set(0, 0);
-
-				var susLength:Float = swagNote.sustainLength;
-
-				var anotherCrochet:Float = Conductor.crochet;
-				var anotherStepCrochet:Float = anotherCrochet / 4;
-				susLength = susLength / anotherStepCrochet;
-				unspawnNotes.push(swagNote);
-
-				var type = 0;
-
-				if (susLength > 0)
-				{
-					swagNote.isParent = true;
-					for (susNote in 0...Std.int(Math.max(susLength, 2)))
-					{
-						oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
-						// var sustainNote = new Note(daStrumTime + (anotherStepCrochet * susNote) + anotherStepCrochet, daNoteData, oldNote, true, false,gottaHitNote, 0);
-						var sustainNote = notes.recycle(Note);
-						sustainNote.setup(daStrumTime + (anotherStepCrochet * susNote) + anotherStepCrochet, daNoteData, oldNote, true);
-						sustainNote.beat = 0;
-						sustainNote.isPlayer = gottaHitNote;
-						sustainNote.noteShit = daNoteType;
-
-						sustainNote.scrollFactor.set();
-						unspawnNotes.push(sustainNote);
-
-						sustainNote.mustPress = gottaHitNote;
-
-						sustainNote.parent = swagNote;
-						swagNote.children.push(sustainNote);
-						sustainNote.spotInLine = type;
-						type++;
-					}
-				}
-
-				swagNote.mustPress = gottaHitNote;
-
-				if (swagNote.mustPress && !swagNote.isSustainNote)
+				if (gottaHitNote && songNotes[2] < 0)
 					playerNotes++;
-				else if (!swagNote.mustPress)
+				else if (!gottaHitNote)
 					opponentNotes++;
 
 				songNotesCount++;
-
-				if (swagNote.mustPress)
-				{
-					swagNote.x += FlxG.width / 2; // general offset
-				}
 			}
-			daBeats += 1;
 		}
-
-		unspawnNotes.sort(sortByShit);
 
 		generatedMusic = true;
 		if (FlxG.save.data.gen)
@@ -2625,31 +2549,57 @@ class PlayState extends MusicBeatState
 			FlxG.stage.window.borderless = false;
 		}
 
-		if (unspawnNotes[0] != null)
+		while (noteCounter < SONG.notes[curSection].sectionNotes.length)
 		{
-			var shit:Float = 2000;
-			if (SONG.speed < 1 || scrollSpeed < 1)
-				shit /= scrollSpeed == 1 ? SONG.speed : scrollSpeed;
-			var time:Float = shit * songMultiplier;
+			var note = SONG.notes[curSection].sectionNotes[noteCounter];
+			var shit:Float = 1500;
+			var speed:Float = FlxMath.roundDecimal((scrollSpeed != 1 ? scrollSpeed : SONG.speed), 2);
+			if (speed < 1)
+				shit /= speed;
+			var time = shit * songMultiplier;
 
-			while (unspawnNotes.length > 0 && unspawnNotes[0].strumTime - Conductor.songPosition < time)
+			if ((note[0] - Conductor.songPosition) < time)
+				break;
+
+			var isSustain = false;
+			var spot:Int = 0;
+			var lastNote = notes.members[noteCounter];
+			var daStrumTime:Float = (note[0] - FlxG.save.data.offset - SONG.offset) / songMultiplier;
+			if (daStrumTime < 0)
+				daStrumTime = 0;
+			var daNoteData:Int = Std.int(note[1]);
+			var daNoteType:String = note[4];
+			var daBeat = TimingStruct.getBeatFromTime(daStrumTime);
+
+			if (note[2] > 0)
+				isSustain = true;
+			else if (note[2] < 0)
+				isSustain = false;
+
+			var gottaHitNote:Bool = false;
+			if (note[1] > 3)
+				gottaHitNote = true;
+			else if (note[1] <= 3)
+				gottaHitNote = false;	
+		
+			var newNote:Note = notes.recycle(Note);
+			newNote.setup(daStrumTime, daNoteData, isSustain);
+			newNote.isPlayer = newNote.mustPress = gottaHitNote;
+			newNote.noteShit = note[4];
+			newNote.sustainLength = note[2];
+			if (isSustain)
 			{
-				var dunceNote:Note = unspawnNotes[0];
-
-				notes.insert(0, dunceNote);
-
-				#if FEATURE_LUAMODCHART
-				if (executeModchart)
-				{
-					new LuaNote(dunceNote, currentLuaIndex);
-					dunceNote.luaID = currentLuaIndex;
-				}
-				#end
-
-				var index:Int = unspawnNotes.indexOf(dunceNote);
-				unspawnNotes.splice(index, 1);
-				currentLuaIndex++;
+				newNote.parent = lastNote;
+				lastNote.children.push(newNote);
+				newNote.spotInLine = noteCounter;
 			}
+			newNote.active = newNote.visible = true;
+			newNote.prevNote = lastNote;
+			lastNote = newNote;
+
+			Debug.logTrace('$noteCounter $curSection');
+			notes.add(newNote);
+			noteCounter++;
 		}
 
 		// uhhh dont comment out. It breaks everything
@@ -4857,6 +4807,9 @@ class PlayState extends MusicBeatState
 	{
 		super.sectionHit();
 
+		noteCounter = 0;
+		Debug.logTrace(curSection);
+
 		if (camZooming && FlxG.camera.zoom < 1.35)
 		{
 			FlxG.camera.zoom += 0.015;
@@ -5858,7 +5811,6 @@ class PlayState extends MusicBeatState
 				{
 					cutscene.play();
 				});
-				Debug.logTrace("Fard");
 			}
 		});
 		inst.stop();

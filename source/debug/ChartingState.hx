@@ -1320,11 +1320,10 @@ class ChartingState extends MusicBeatState
 				Math.abs(n.strumTime),
 				n.noteData,
 				n.sustainLength,
-				TimingStruct.getBeatFromTime(n.strumTime),
 				n.noteShit
 			]);
 		else
-			section.sectionNotes.push([noteStrum, noteData, noteSus, TimingStruct.getBeatFromTime(noteStrum), noteShit]);
+			section.sectionNotes.push([noteStrum, noteData, noteSus, noteShit]);
 
 		Debug.logTrace("Note Data : " + noteData + " StrumTime : " + noteStrum + " Section Length : " + section.sectionNotes.length);
 
@@ -1532,7 +1531,6 @@ class ChartingState extends MusicBeatState
 						strum,
 						originalNote.rawNoteData,
 						originalNote.sustainLength,
-						originalNote.beat,
 						originalNote.noteShit
 					];
 					ii.sectionNotes.push(newData);
@@ -2234,12 +2232,6 @@ class ChartingState extends MusicBeatState
 
 				note[1] = boob;
 				var copiedNote:Array<Dynamic> = [note[0], boob, note[2], note[3]];
-				// duetNotes.push(copiedNote);
-			}
-
-			for (i in duetNotes)
-			{
-				// SONG.notes[curSec].sectionNotes.push(i);
 			}
 
 			destroyBoxes();

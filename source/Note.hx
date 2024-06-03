@@ -177,7 +177,7 @@ class Note extends FlxSprite
 		return value;
 	}
 
-	public function setup(strumTime:Float, noteData:Int, ?prevNote:Note, ?sustainNote:Bool = false)
+	public function setup(strumTime:Float, noteData:Int, ?sustainNote:Bool = false)
 	{
 		if (prevNote == null)
 			prevNote = this;
@@ -186,7 +186,6 @@ class Note extends FlxSprite
 		this.strumTime = strumTime;
 		rStrumTime = strumTime;
 		isSustainNote = sustainNote;
-		this.prevNote = prevNote;
 		texture = '';
 
 		if (this.strumTime < 0)
@@ -281,20 +280,7 @@ class Note extends FlxSprite
 			?bet:Float = 0)
 	{
 		super();
-
-		if (PlayState.SONG != null)
-			noteTypeCheck = PlayState.STYLE.style.toLowerCase();
-		else
-			noteTypeCheck = 'normal';
-
-		if (prevNote == null)
-			prevNote = this;
-		moves = false;
-		this.noteData = noteData;
-		this.strumTime = strumTime;
-		rStrumTime = strumTime;
-		isSustainNote = sustainNote;
-		this.prevNote = prevNote;
+		texture = '';
 	}
 
 	static var _lastValidChecked:String; // optimization
