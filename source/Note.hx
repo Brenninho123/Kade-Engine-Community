@@ -177,7 +177,7 @@ class Note extends FlxSprite
 		return value;
 	}
 
-	public function setup(strumTime:Float, noteData:Int, ?sustainNote:Bool = false)
+	public function setup(strumTime:Float, noteData:Int, ?sustainNote:Bool = false, ?prevNote:Note)
 	{
 		if (prevNote == null)
 			prevNote = this;
@@ -186,7 +186,7 @@ class Note extends FlxSprite
 		this.strumTime = strumTime;
 		rStrumTime = strumTime;
 		isSustainNote = sustainNote;
-		texture = '';
+		this.prevNote = prevNote;
 
 		if (this.strumTime < 0)
 			this.strumTime = 0;

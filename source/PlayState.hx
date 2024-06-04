@@ -2552,7 +2552,7 @@ class PlayState extends MusicBeatState
 		while (noteCounter < SONG.notes[curSection].sectionNotes.length)
 		{
 			var note = SONG.notes[curSection].sectionNotes[noteCounter];
-			var shit:Float = 1500;
+			var shit:Float = 1750;
 			var speed:Float = FlxMath.roundDecimal((scrollSpeed != 1 ? scrollSpeed : SONG.speed), 2);
 			if (speed < 1)
 				shit /= speed;
@@ -2560,6 +2560,8 @@ class PlayState extends MusicBeatState
 
 			if ((note[0] - Conductor.songPosition) < time)
 				break;
+
+			Debug.logTrace(note);
 
 			var isSustain = false;
 			var spot:Int = 0;
@@ -2580,25 +2582,43 @@ class PlayState extends MusicBeatState
 			if (note[1] > 3)
 				gottaHitNote = true;
 			else if (note[1] <= 3)
-				gottaHitNote = false;	
+				gottaHitNote = false;
 		
 			var newNote:Note = notes.recycle(Note);
-			newNote.setup(daStrumTime, daNoteData, isSustain);
-			newNote.isPlayer = newNote.mustPress = gottaHitNote;
+			newNote.setup(daStrumTime, daNoteData, false, null);
+			newNote.mustPress = newNote.isPlayer = gottaHitNote;
 			newNote.noteShit = note[4];
 			newNote.sustainLength = note[2];
-			if (isSustain)
+			newNote.scrollFactor.set();
+			notes.add(newNote);
+
+			var susLength:Float = newNote.sustainLength;
+
+			var anotherCrochet:Float = Conductor.crochet;
+			var anotherStepCrochet:Float = anotherCrochet / 4;
+			susLength = susLength / anotherStepCrochet;
+
+			var susLength = newNote.sustainLength;
+			if (susLength > 0)
 			{
-				newNote.parent = lastNote;
-				lastNote.children.push(newNote);
-				newNote.spotInLine = noteCounter;
+				newNote.isParent = true;
+				for (susNote in 0...Std.int(Math.max(susLength, 2)))
+				{
+					var sustainNote:Note = notes.recycle(Note);
+					sustainNote.setup(daStrumTime + (anotherStepCrochet * susNote) + anotherStepCrochet, daNoteData, true, lastNote);
+					sustainNote.beat = 0;
+					sustainNote.mustPress = sustainNote.isPlayer = gottaHitNote;
+					sustainNote.noteShit = newNote.noteShit;
+					sustainNote.parent = newNote;
+					sustainNote.scrollFactor.set();
+					sustainNote.spotInLine = spot;
+					lastNote = sustainNote;
+					newNote.children.push(newNote);
+					spot++;
+				}
 			}
-			newNote.active = newNote.visible = true;
-			newNote.prevNote = lastNote;
 			lastNote = newNote;
 
-			Debug.logTrace('$noteCounter $curSection');
-			notes.add(newNote);
 			noteCounter++;
 		}
 
@@ -4808,7 +4828,8 @@ class PlayState extends MusicBeatState
 		super.sectionHit();
 
 		noteCounter = 0;
-		Debug.logTrace(curSection);
+
+		Debug.logTrace(SONG.notes[curSection].sectionNotes.length);
 
 		if (camZooming && FlxG.camera.zoom < 1.35)
 		{
