@@ -1316,12 +1316,7 @@ class ChartingState extends MusicBeatState
 		}
 
 		if (n != null)
-			section.sectionNotes.push([
-				Math.abs(n.strumTime),
-				n.noteData,
-				n.sustainLength,
-				n.noteShit
-			]);
+			section.sectionNotes.push([Math.abs(n.strumTime), n.noteData, n.sustainLength, n.noteShit]);
 		else
 			section.sectionNotes.push([noteStrum, noteData, noteSus, noteShit]);
 

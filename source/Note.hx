@@ -177,16 +177,17 @@ class Note extends FlxSprite
 		return value;
 	}
 
-	public function setup(strumTime:Float, noteData:Int, ?sustainNote:Bool = false, ?prevNote:Note)
+	public function setup(strumTime:Float, noteData:Int, ?sustainNote:Bool = false, ?prevNote:Note, ?isPlayer:Bool = false)
 	{
 		if (prevNote == null)
 			prevNote = this;
-		moves = false;	
+		moves = false;
 		this.noteData = noteData;
 		this.strumTime = strumTime;
 		rStrumTime = strumTime;
-		isSustainNote = sustainNote;
 		this.prevNote = prevNote;
+		this.isPlayer = isPlayer;
+		isSustainNote = sustainNote;
 
 		if (this.strumTime < 0)
 			this.strumTime = 0;
@@ -194,7 +195,7 @@ class Note extends FlxSprite
 		x += 50;
 		y -= 2000;
 		lateHitMult = isSustainNote ? 0.5 : 1;
-		
+
 		if (PlayStateChangeables.mirrorMode)
 		{
 			this.noteData = Std.int(Math.abs(3 - noteData));
@@ -359,13 +360,9 @@ class Note extends FlxSprite
 	{
 		for (i in 0...4)
 		{
-			if (isSustainNote)
-			{
-				animation.addByPrefix(dataColor[i] + 'hold', dataColor[i] + ' hold'); // Hold
-				animation.addByPrefix(dataColor[i] + 'holdend', dataColor[i] + ' tail'); // Tails
-			}
-			else
-				animation.addByPrefix(dataColor[i] + 'Scroll', dataColor[i] + ' alone'); // Normal notes
+			animation.addByPrefix(dataColor[i] + 'hold', dataColor[i] + ' hold'); // Hold
+			animation.addByPrefix(dataColor[i] + 'holdend', dataColor[i] + ' tail'); // Tails
+			animation.addByPrefix(dataColor[i] + 'Scroll', dataColor[i] + ' alone'); // Normal notes
 		}
 		setGraphicSize(Std.int(width * 0.7));
 		updateHitbox();
@@ -375,13 +372,9 @@ class Note extends FlxSprite
 	{
 		for (i in 0...4)
 		{
-			if (isSustainNote)
-			{
-				animation.add(dataColor[i] + 'hold', [i]); // Holds
-				animation.add(dataColor[i] + 'holdend', [i + 4]); // Tails
-			}
-			else
-				animation.add(dataColor[i] + 'Scroll', [i + 4]); // Normal notes
+			animation.add(dataColor[i] + 'hold', [i]); // Holds
+			animation.add(dataColor[i] + 'holdend', [i + 4]); // Tails
+			animation.add(dataColor[i] + 'Scroll', [i + 4]); // Normal notes
 		}
 
 		setGraphicSize(Std.int(width * CoolUtil.daPixelZoom));
