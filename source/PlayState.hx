@@ -417,6 +417,7 @@ class PlayState extends MusicBeatState
 	var notePositions:Array<Float> = [92, 204, 316, 428, 732, 844, 956, 1068];
 
 	public var noteCounter:Int = 0;
+	public var noteStruct:Array<NoteStruct> = [];
 
 	// idk
 	// Adding Objects Using Lua
@@ -2163,6 +2164,12 @@ class PlayState extends MusicBeatState
 
 			for (songNotes in section.sectionNotes)
 			{
+				noteStruct.push({
+					strumTime: songNotes[0],
+					noteData: songNotes[1],
+					length: songNotes[2],
+					noteType: songNotes[3]
+				});
 				var gottaHitNote:Bool = false;
 				if (songNotes[1] > 3)
 					gottaHitNote = true;
@@ -2516,81 +2523,6 @@ class PlayState extends MusicBeatState
 		else
 		{
 			FlxG.stage.window.borderless = false;
-		}
-
-		if (SONG.notes[curSection].sectionNotes.length > 0)
-		{	
-			while (noteCounter < SONG.notes[curSection].sectionNotes.length)
-			{
-				var note = SONG.notes[curSection].sectionNotes[noteCounter];
-				var shit:Float = 1750;
-				var speed:Float = FlxMath.roundDecimal((scrollSpeed != 1 ? scrollSpeed : SONG.speed), 2);
-				if (speed < 1)
-					shit /= speed;
-				var time = shit * songMultiplier;
-
-				if (note[0] - Conductor.songPosition < time)
-					break;
-
-				Debug.logTrace("after");	
-
-				var isSustain = false;
-				var spot:Int = 0;
-				var lastNote = notes.members[noteCounter];
-				var daStrumTime:Float = (note[0] - FlxG.save.data.offset - SONG.offset) / songMultiplier;
-				if (daStrumTime < 0)
-					daStrumTime = 0;
-				var daNoteData:Int = Std.int(note[1] % 4);
-				var daNoteType:String = note[3];
-				var daBeat = TimingStruct.getBeatFromTime(daStrumTime);
-
-				if (note[2] > 0)
-					isSustain = true;
-				else if (note[2] < 0)
-					isSustain = false;
-
-				var gottaHitNote:Bool = false;
-				if (note[1] > 3)
-					gottaHitNote = true;
-				else if (note[1] <= 3)
-					gottaHitNote = false;
-
-				var newNote:Note = notes.recycle(Note);
-				newNote.setup(daStrumTime, daNoteData, false, null, gottaHitNote);
-				newNote.beat = daBeat;
-				newNote.noteShit = daNoteType;
-				newNote.sustainLength = note[2];
-				newNote.mustPress = gottaHitNote;
-				lastNote = newNote;
-				newNote.scrollFactor.set();
-				notes.add(newNote);
-
-				var susLength:Float = newNote.sustainLength;
-
-				var anotherCrochet:Float = Conductor.crochet;
-				var anotherStepCrochet:Float = anotherCrochet / 4;
-				susLength = susLength / anotherStepCrochet;
-				if (susLength > 0)
-				{
-					newNote.isParent = true;
-					for (susNote in 0...Std.int(Math.max(susLength, 2)))
-					{
-						var sustainNote:Note = notes.recycle(Note);
-						sustainNote.setup(daStrumTime + (anotherStepCrochet * susNote) + anotherStepCrochet, daNoteData, true, lastNote, gottaHitNote);
-						sustainNote.beat = 0;
-						sustainNote.mustPress = gottaHitNote;
-						sustainNote.noteShit = newNote.noteShit;
-						sustainNote.parent = newNote;
-						sustainNote.scrollFactor.set();
-						sustainNote.spotInLine = spot;
-						lastNote = sustainNote;
-						newNote.children.push(sustainNote);
-						spot++;
-					}
-				}
-
-				noteCounter++;
-			}
 		}
 
 		// uhhh dont comment out. It breaks everything
@@ -3190,6 +3122,71 @@ class PlayState extends MusicBeatState
 		}
 
 		super.update(elapsed);
+
+		while (noteCounter < noteStruct.length)
+		{
+			var note = noteStruct[noteCounter];
+			var shit:Float = 1800;
+			var speed:Float = FlxMath.roundDecimal(scrollSpeed, 2);
+			if (speed < 1)
+				shit /= speed;
+			var time = shit * songMultiplier;
+			
+
+			if (note.strumTime - Conductor.songPosition > time)
+				break;
+
+			var spot:Int = 0;
+			var lastNote = notes.members[noteCounter];
+			var daStrumTime:Float = (note.strumTime - FlxG.save.data.offset - SONG.offset) / songMultiplier;
+			if (daStrumTime < 0)
+				daStrumTime = 0;
+			var daNoteData:Int = Std.int(note.noteData % 4);
+			var daNoteType:String = note.noteType;
+			var daBeat = TimingStruct.getBeatFromTime(daStrumTime);
+			var gottaHitNote:Bool = false;
+			if (note.noteData > 3)
+				gottaHitNote = true;
+			else if (note.noteData <= 3)
+				gottaHitNote = false;
+
+			var newNote:Note = notes.recycle(Note);
+			newNote.setup(daStrumTime, daNoteData, false, null, gottaHitNote);
+			newNote.beat = daBeat;
+			newNote.noteShit = daNoteType;
+			newNote.sustainLength = note.length;
+			newNote.mustPress = gottaHitNote;
+			lastNote = newNote;
+			newNote.scrollFactor.set();
+			notes.add(newNote);
+
+			var susLength:Float = newNote.sustainLength;
+
+			var anotherCrochet:Float = Conductor.crochet;
+			var anotherStepCrochet:Float = anotherCrochet / 4;
+			susLength = susLength / anotherStepCrochet;
+			if (susLength > 0)
+			{
+				newNote.isParent = true;
+				for (susNote in 0...Std.int(Math.max(susLength, 2)))
+				{
+					var sustainNote:Note = notes.recycle(Note);
+					sustainNote.setup(daStrumTime + (anotherStepCrochet * susNote) + anotherStepCrochet, daNoteData, true, lastNote, gottaHitNote);
+					sustainNote.beat = 0;
+					sustainNote.mustPress = gottaHitNote;
+					sustainNote.noteShit = newNote.noteShit;
+					sustainNote.parent = newNote;
+					sustainNote.scrollFactor.set();
+					sustainNote.spotInLine = spot;
+					lastNote = sustainNote;
+					newNote.children.push(sustainNote);
+					spot++;
+				}
+			}
+			Debug.logTrace("After");
+
+			noteCounter++;
+		}
 
 		if (songStarted)
 		{
@@ -4797,11 +4794,7 @@ class PlayState extends MusicBeatState
 	override function sectionHit():Void
 	{
 		super.sectionHit();
-
-		noteCounter = 0;
-
-		Debug.logTrace('${SONG.notes[curSection].sectionNotes.length} $noteCounter');
-
+	
 		if (camZooming && FlxG.camera.zoom < 1.35)
 		{
 			FlxG.camera.zoom += 0.015;
@@ -5699,8 +5692,8 @@ class PlayState extends MusicBeatState
 
 	private function cleanPlayObjects()
 	{
+		noteStruct = null;
 		timerManager.clear();
-
 		tweenManager.clear();
 
 		for (i in uiGroup)
@@ -5781,4 +5774,13 @@ class PlayState extends MusicBeatState
 		FlxG.log.warn("Platform Not Supported.");
 		#end
 	}
+}
+
+@:structInit
+class NoteStruct
+{
+	public var strumTime:Float = 0;
+	public var noteData:Int = 0;
+	public var length:Float = 0;
+	public var noteType:String = "Normal";
 }
