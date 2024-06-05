@@ -3154,11 +3154,11 @@ class PlayState extends MusicBeatState
 			newNote.setup(daStrumTime, daNoteData, false, null, gottaHitNote);
 			newNote.beat = daBeat;
 			newNote.noteShit = daNoteType;
-			newNote.sustainLength = note.length;
 			newNote.mustPress = gottaHitNote;
+			newNote.sustainLength = note.length;
+			newNote.insideCharter = false;
 			lastNote = newNote;
 			newNote.scrollFactor.set();
-			notes.add(newNote);
 
 			var susLength:Float = newNote.sustainLength;
 
@@ -3173,18 +3173,20 @@ class PlayState extends MusicBeatState
 					var sustainNote:Note = notes.recycle(Note);
 					sustainNote.setup(daStrumTime + (anotherStepCrochet * susNote) + anotherStepCrochet, daNoteData, true, lastNote, gottaHitNote);
 					sustainNote.beat = 0;
-					sustainNote.mustPress = gottaHitNote;
 					sustainNote.noteShit = newNote.noteShit;
 					sustainNote.parent = newNote;
-					sustainNote.scrollFactor.set();
+					sustainNote.mustPress = gottaHitNote;
 					sustainNote.spotInLine = spot;
+					sustainNote.prevNote = lastNote;
+					sustainNote.insideCharter = false;
 					lastNote = sustainNote;
+					sustainNote.scrollFactor.set();
 					newNote.children.push(sustainNote);
+					notes.add(sustainNote);
 					spot++;
 				}
 			}
-			Debug.logTrace("After");
-
+			notes.add(newNote);
 			noteCounter++;
 		}
 
@@ -3252,16 +3254,7 @@ class PlayState extends MusicBeatState
 				var angleDir = strumDirection * Math.PI / 180;
 
 				var origin = strumY + Note.swagWidth / 2;
-
-				if (daNote.isSustainNote)
-					daNote.x = (strumX + Math.cos(angleDir) * daNote.distance) + (Note.swagWidth / 3);
-				else
-					daNote.x = strumX + Math.cos(angleDir) * daNote.distance;
-
-				if (SONG.style.toLowerCase() == 'pixel' && daNote.isSustainNote)
-					daNote.x -= 5;
-
-				daNote.y = strumY + Math.sin(angleDir) * daNote.distance;
+				
 				if (!daNote.overrideDistance)
 				{
 					if (PlayStateChangeables.useDownscroll)
@@ -3273,6 +3266,16 @@ class PlayState extends MusicBeatState
 						daNote.distance = (-0.45 * ((Conductor.songPosition - daNote.strumTime)) * (FlxMath.roundDecimal(leSpeed, 2)) * daNote.speedMultiplier)
 							+ daNote.noteYOff;
 				}
+
+				if (daNote.isSustainNote)
+					daNote.x = (strumX + Math.cos(angleDir) * daNote.distance) + (Note.swagWidth / 3);
+				else
+					daNote.x = strumX + Math.cos(angleDir) * daNote.distance;
+
+				if (SONG.style.toLowerCase() == 'pixel' && daNote.isSustainNote)
+					daNote.x -= 5;
+
+				daNote.y = strumY + Math.sin(angleDir) * daNote.distance;
 
 				var swagRect:FlxRect = daNote.clipRect;
 				if (swagRect == null)
@@ -5684,9 +5687,7 @@ class PlayState extends MusicBeatState
 	{
 		if (daNote == null)
 			return;
-
-		daNote.active = false;
-		daNote.visible = false;
+		
 		daNote.kill();
 	}
 

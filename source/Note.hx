@@ -1,10 +1,10 @@
 package;
 
-import flixel.math.FlxMath;
-import PlayState;
 import LuaClass;
-import flixel.math.FlxRect;
+import PlayState;
 import Ratings.RatingWindow;
+import flixel.math.FlxMath;
+import flixel.math.FlxRect;
 
 using StringTools;
 
@@ -188,11 +188,21 @@ class Note extends FlxSprite
 		this.prevNote = prevNote;
 		this.isPlayer = isPlayer;
 		isSustainNote = sustainNote;
+		scale.y = 0.7;
+		modAlpha = 1;
+		alpha = 1;
+		isParent = false;
+		parent = null;
+		tooLate = false;
+		canBeHit = false;
+		wasGoodHit = false;
+		isSustainEnd = false;
+
+		children = [];
 
 		if (this.strumTime < 0)
 			this.strumTime = 0;
-
-		x += 50;
+		
 		y -= 2000;
 		lateHitMult = isSustainNote ? 0.5 : 1;
 
@@ -275,6 +285,10 @@ class Note extends FlxSprite
 			centerOffsets();
 			centerOrigin();
 		}
+		sustainActive = false;
+
+		clipRect = FlxDestroyUtil.put(clipRect);
+		updateHitbox();
 	}
 
 	public function new(?strumTime:Float, ?noteData:Int, ?prevNote:Note, ?sustainNote:Bool = false, ?inCharter:Bool = false, ?isPlayer:Bool = false,
