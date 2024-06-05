@@ -312,12 +312,15 @@ class Song
 
 					i.playerSec = i.mustHitSection;
 
-					if (ii[4] == null || ii[4] == 'true' || ii[4] == 'false' || ii[4] == 0 || ii[4] == 0.0 || Math.isNaN(ii[4]))
+					if (ii[4] == null || !Std.isOfType(ii[4], String))
 						ii[4] = 'Normal';
 
-					ii[4] = ii[5];
+					if (ii[5] != null)
+						ii[4] = ii[5];
 
-					ii[5] = null;
+					ii[3] = ii[4];
+					ii[5] = "";
+					ii[4] = "";
 				}
 			}
 

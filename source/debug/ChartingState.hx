@@ -1182,11 +1182,14 @@ class ChartingState extends MusicBeatState
 					else if (daNoteInfo <= 3)
 						gottaHitNote = false;
 
-					var note:Note = new Note(daStrumTime, daNoteInfo, null, false, true, gottaHitNote, daBeat);
+					var note:Note = new Note();
+					note.setup(daStrumTime, daNoteInfo, false, null, gottaHitNote);
 					note.rawNoteData = daNoteInfo;
+					note.insideCharter = true;
+					note.beat = daBeat;
 					note.noteShit = daType;
 					note.sustainLength = daSus;
-					note.strumTime = daStrumTime;
+					note.mustPress = gottaHitNote;
 
 					note.setGraphicSize(Math.floor(noteSize), Math.floor(noteSize));
 					note.updateHitbox();
@@ -1330,44 +1333,28 @@ class ChartingState extends MusicBeatState
 		else if (noteData <= 3)
 			gottaHitNote = false;
 
-		if (n == null)
-		{
-			var note:Note = new Note(noteStrum, noteData, null, false, true, gottaHitNote, TimingStruct.getBeatFromTime(noteStrum));
-			note.rawNoteData = noteData;
-			note.sustainLength = noteSus;
-			note.noteShit = noteShit;
-			note.setGraphicSize(Math.floor(noteSize), Math.floor(noteSize));
-			note.updateHitbox();
-			note.x = Math.floor(note.rawNoteData * noteSize) + notePos;
+		var note:Note = new Note();
+		note.setup(noteStrum, noteData, false, null, gottaHitNote);
+		note.rawNoteData = noteData;
+		note.insideCharter = true;
+		note.beat = TimingStruct.getBeatFromTime(noteStrum);
+		note.mustPress = gottaHitNote;
+		note.sustainLength = noteSus;
+		note.noteShit = noteShit;
+		Debug.logTrace(note.rawNoteData);
+		note.setGraphicSize(Math.floor(noteSize), Math.floor(noteSize));
+		note.updateHitbox();
 
-			if (curSelectedNoteObject != null)
-				curSelectedNoteObject.charterSelected = false;
-			curSelectedNoteObject = note;
+		note.x = Math.floor(note.rawNoteData * noteSize) + notePos;
 
-			curSelectedNoteObject.charterSelected = true;
-			note.y = Math.floor(getYfromStrum(noteStrum) * size);
-			curRenderedNotes.add(note);
-			selectNote(note);
-		}
-		else
-		{
-			var note:Note = new Note(n.strumTime, n.noteData, null, false, true, gottaHitNote, TimingStruct.getBeatFromTime(n.strumTime));
-			note.rawNoteData = n.noteData;
-			note.sustainLength = noteSus;
-			note.noteShit = noteShit;
-			note.setGraphicSize(Math.floor(noteSize), Math.floor(noteSize));
-			note.updateHitbox();
-			note.x = Math.floor(note.rawNoteData * noteSize) + notePos;
+		if (curSelectedNoteObject != null)
+			curSelectedNoteObject.charterSelected = false;
+		curSelectedNoteObject = note;
 
-			if (curSelectedNoteObject != null)
-				curSelectedNoteObject.charterSelected = false;
-			curSelectedNoteObject = note;
-
-			curSelectedNoteObject.charterSelected = true;
-			note.y = Math.floor(getYfromStrum(noteStrum) * size);
-			curRenderedNotes.add(note);
-			selectNote(note);
-		}
+		curSelectedNoteObject.charterSelected = true;
+		note.y = Math.floor(getYfromStrum(noteStrum) * size);
+		curRenderedNotes.add(note);
+		selectNote(note);
 		var thingy = section.sectionNotes[section.sectionNotes.length - 1];
 
 		curSelectedNote = thingy;

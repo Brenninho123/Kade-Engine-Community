@@ -2518,79 +2518,79 @@ class PlayState extends MusicBeatState
 			FlxG.stage.window.borderless = false;
 		}
 
-		while (noteCounter < SONG.notes[curSection].sectionNotes.length)
-		{
-			var note = SONG.notes[curSection].sectionNotes[noteCounter];
-			var shit:Float = 1750;
-			var speed:Float = FlxMath.roundDecimal((scrollSpeed != 1 ? scrollSpeed : SONG.speed), 2);
-			if (speed < 1)
-				shit /= speed;
-			var time = shit * songMultiplier;
-
-			if ((note[0] - Conductor.songPosition) < time)
-				break;
-
-			Debug.logTrace(note);
-
-			var isSustain = false;
-			var spot:Int = 0;
-			var lastNote = notes.members[noteCounter];
-			var daStrumTime:Float = (note[0] - FlxG.save.data.offset - SONG.offset) / songMultiplier;
-			if (daStrumTime < 0)
-				daStrumTime = 0;
-			var daNoteData:Int = Std.int(note[1] % 4);
-			var daNoteType:String = note[4];
-			var daBeat = TimingStruct.getBeatFromTime(daStrumTime);
-
-			if (note[2] > 0)
-				isSustain = true;
-			else if (note[2] < 0)
-				isSustain = false;
-
-			var gottaHitNote:Bool = false;
-			if (note[1] > 3)
-				gottaHitNote = true;
-			else if (note[1] <= 3)
-				gottaHitNote = false;
-			Debug.logTrace(gottaHitNote);
-
-			var newNote:Note = notes.recycle(Note);
-			newNote.setup(daStrumTime, daNoteData, false, null, gottaHitNote);
-			newNote.beat = daBeat;
-			newNote.noteShit = note[4];
-			newNote.sustainLength = note[2];
-			newNote.mustPress = gottaHitNote;
-			lastNote = newNote;
-			newNote.scrollFactor.set();
-			notes.add(newNote);
-
-			var susLength:Float = newNote.sustainLength;
-
-			var anotherCrochet:Float = Conductor.crochet;
-			var anotherStepCrochet:Float = anotherCrochet / 4;
-			susLength = susLength / anotherStepCrochet;
-			if (susLength > 0)
+		if (SONG.notes[curSection].sectionNotes.length > 0)
+		{	
+			while (noteCounter < SONG.notes[curSection].sectionNotes.length)
 			{
-				newNote.isParent = true;
-				for (susNote in 0...Std.int(Math.max(susLength, 2)))
+				var note = SONG.notes[curSection].sectionNotes[noteCounter];
+				var shit:Float = 1750;
+				var speed:Float = FlxMath.roundDecimal((scrollSpeed != 1 ? scrollSpeed : SONG.speed), 2);
+				if (speed < 1)
+					shit /= speed;
+				var time = shit * songMultiplier;
+
+				if (note[0] - Conductor.songPosition < time)
+					break;
+
+				Debug.logTrace("after");	
+
+				var isSustain = false;
+				var spot:Int = 0;
+				var lastNote = notes.members[noteCounter];
+				var daStrumTime:Float = (note[0] - FlxG.save.data.offset - SONG.offset) / songMultiplier;
+				if (daStrumTime < 0)
+					daStrumTime = 0;
+				var daNoteData:Int = Std.int(note[1] % 4);
+				var daNoteType:String = note[3];
+				var daBeat = TimingStruct.getBeatFromTime(daStrumTime);
+
+				if (note[2] > 0)
+					isSustain = true;
+				else if (note[2] < 0)
+					isSustain = false;
+
+				var gottaHitNote:Bool = false;
+				if (note[1] > 3)
+					gottaHitNote = true;
+				else if (note[1] <= 3)
+					gottaHitNote = false;
+
+				var newNote:Note = notes.recycle(Note);
+				newNote.setup(daStrumTime, daNoteData, false, null, gottaHitNote);
+				newNote.beat = daBeat;
+				newNote.noteShit = daNoteType;
+				newNote.sustainLength = note[2];
+				newNote.mustPress = gottaHitNote;
+				lastNote = newNote;
+				newNote.scrollFactor.set();
+				notes.add(newNote);
+
+				var susLength:Float = newNote.sustainLength;
+
+				var anotherCrochet:Float = Conductor.crochet;
+				var anotherStepCrochet:Float = anotherCrochet / 4;
+				susLength = susLength / anotherStepCrochet;
+				if (susLength > 0)
 				{
-					var sustainNote:Note = notes.recycle(Note);
-					sustainNote.setup(daStrumTime + (anotherStepCrochet * susNote) + anotherStepCrochet, daNoteData, true, lastNote, gottaHitNote);
-					sustainNote.beat = 0;
-					sustainNote.mustPress = gottaHitNote;
-					sustainNote.noteShit = newNote.noteShit;
-					sustainNote.parent = newNote;
-					sustainNote.scrollFactor.set();
-					sustainNote.spotInLine = spot;
-					lastNote = sustainNote;
-					newNote.children.push(newNote);
-					spot++;
+					newNote.isParent = true;
+					for (susNote in 0...Std.int(Math.max(susLength, 2)))
+					{
+						var sustainNote:Note = notes.recycle(Note);
+						sustainNote.setup(daStrumTime + (anotherStepCrochet * susNote) + anotherStepCrochet, daNoteData, true, lastNote, gottaHitNote);
+						sustainNote.beat = 0;
+						sustainNote.mustPress = gottaHitNote;
+						sustainNote.noteShit = newNote.noteShit;
+						sustainNote.parent = newNote;
+						sustainNote.scrollFactor.set();
+						sustainNote.spotInLine = spot;
+						lastNote = sustainNote;
+						newNote.children.push(sustainNote);
+						spot++;
+					}
 				}
+
+				noteCounter++;
 			}
-
-			notes.members.sort(sortByShit);
-
-			noteCounter++;
 		}
 
 		// uhhh dont comment out. It breaks everything
@@ -4800,7 +4800,7 @@ class PlayState extends MusicBeatState
 
 		noteCounter = 0;
 
-		Debug.logTrace(SONG.notes[curSection].sectionNotes.length);
+		Debug.logTrace('${SONG.notes[curSection].sectionNotes.length} $noteCounter');
 
 		if (camZooming && FlxG.camera.zoom < 1.35)
 		{
